@@ -7,16 +7,16 @@ import (
 )
 
 type TfResourceArg struct {
-	name        string
-	description string
-	field_name  string
-	field       []*TfResourceArg
-	required    bool
+	Name        string
+	Description string
+	Field_name  string
+	Field       []*TfResourceArg
+	Required    bool
 }
 
 type TfResource struct {
-	name string
-	args []*TfResourceArg
+	Name string
+	Args []*TfResourceArg
 }
 
 func GetResourceUrl(resource string) string {
@@ -26,20 +26,20 @@ func GetResourceUrl(resource string) string {
 }
 
 func ScrapingResourceList(li *goquery.Selection) *TfResourceArg {
-	a := &TfResourceArg{field_name: ""}
-	a.name = li.Find("a > code").Text()
-	a.description = "(" + strings.SplitN(li.Text(), "(", 2)[1]
-	a.description = strings.Replace(a.description, "\n", "", -1)
+	a := &TfResourceArg{Field_name: ""}
+	a.Name = li.Find("a > code").Text()
+	a.Description = "(" + strings.SplitN(li.Text(), "(", 2)[1]
+	a.Description = strings.Replace(a.Description, "\n", "", -1)
 	if strings.Contains(strings.SplitN(li.Text(), " ", 3)[2], "Required") {
-		a.required = true
+		a.Required = true
 	} else {
-		a.required = false
+		a.Required = false
 	}
 	return a
 }
 
 func ScrapingDoc(url string) *TfResource {
-	ret := &TfResource{}
+	ret := &TfResource{Name: ""}
 
 	doc, err := goquery.NewDocument(url)
 	if err != nil {
@@ -53,22 +53,22 @@ func ScrapingDoc(url string) *TfResource {
 		if strings.Contains(selection.Text(), "The following arguments") {
 			selection.Next().Children().Each(func(_ int, li *goquery.Selection) {
 				arg := ScrapingResourceList(li)
-				if strings.Contains(arg.description, "below for") {
-					start_at := strings.Index(arg.description, "See") + 4
-					end_at := strings.LastIndex(arg.description, "below") - 1
+				if strings.Contains(arg.Description, "below for") {
+					start_at := strings.Index(arg.Description, "See") + 4
+					end_at := strings.LastIndex(arg.Description, "below") - 1
 
-					arg.field_name = strings.Replace(strings.ToLower(arg.description[start_at:end_at]), " ", "-", -1)
+					arg.Field_name = strings.Replace(strings.ToLower(arg.Description[start_at:end_at]), " ", "-", -1)
 				}
-				ret.args = append(ret.args, arg)
+				ret.Args = append(ret.Args, arg)
 			})
 		}
 
 		attr, _ := selection.Attr("id")
 		if selection.Is("h3") && attr != "example" {
-			for i, arg := range ret.args {
-				if arg.field_name == attr {
+			for i, arg := range ret.Args {
+				if arg.Field_name == attr {
 					selection.NextAllFiltered("ul").First().Children().Each(func(_ int, li *goquery.Selection) {
-						ret.args[i].field = append(ret.args[i].field, ScrapingResourceList(li))
+						ret.Args[i].Field = append(ret.Args[i].Field, ScrapingResourceList(li))
 					})
 				}
 			}
