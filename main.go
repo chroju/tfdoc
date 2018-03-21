@@ -17,5 +17,6 @@ func main() {
 
 	url := scraping.GetResourceUrl(resource_name)
 	resource := scraping.ScrapingDoc(url)
+	resource.Name = resource_name
 	printer.PrintTfResource(resource)
 }
