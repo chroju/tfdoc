@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/chroju/tfh/printer"
-	"github.com/chroju/tfh/scraping"
+	"github.com/chroju/tfdoc/printer"
+	"github.com/chroju/tfdoc/scraping"
 	flag "github.com/spf13/pflag"
 )
 

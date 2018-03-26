@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/chroju/tfh/scraping"
+	"github.com/chroju/tfdoc/scraping"
 )
 
 func PrintTfResource(tfr *scraping.TfResource) {
