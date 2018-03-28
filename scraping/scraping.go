@@ -9,8 +9,7 @@ import (
 type TfResourceArg struct {
 	Name        string
 	Description string
-	Field_name  string
-	Field       []*TfResourceArg
+	NestedField []*TfResourceArg
 	Required    bool
 }
 
@@ -25,10 +24,10 @@ func GetResourceUrl(resource string) string {
 		splited_resource[0] + "/r/" + splited_resource[1] + ".html"
 }
 
-func ScrapingResourceList(li *goquery.Selection) *TfResourceArg {
-	a := &TfResourceArg{Field_name: ""}
+func scrapingResourceList(li *goquery.Selection) *TfResourceArg {
+	a := &TfResourceArg{}
 	a.Name = li.Find("a > code").Text()
-	a.Description = "(" + strings.SplitN(li.Text(), "(", 2)[1]
+	a.Description = strings.TrimSpace(strings.SplitN(li.Text(), "-", 2)[1])
 	a.Description = strings.Replace(a.Description, "\n", "", -1)
 	if strings.Contains(strings.SplitN(li.Text(), " ", 3)[2], "Required") {
 		a.Required = true
@@ -47,28 +46,18 @@ func ScrapingDoc(url string) *TfResource {
 		// return "error: " + url
 	}
 
-	inner := doc.Find("#inner").Children()
-
-	inner.Each(func(_ int, selection *goquery.Selection) {
-		if strings.Contains(selection.Text(), "The following arguments") {
-			selection.Next().Children().Each(func(_ int, li *goquery.Selection) {
-				arg := ScrapingResourceList(li)
-				if strings.Contains(arg.Description, "below for") {
-					start_at := strings.Index(arg.Description, "See") + 4
-					end_at := strings.LastIndex(arg.Description, "below") - 1
-
-					arg.Field_name = strings.Replace(strings.ToLower(arg.Description[start_at:end_at]), " ", "-", -1)
-				}
+	doc.Find("#inner > ul").Each(func(i int, selection *goquery.Selection) {
+		if i == 0 {
+			selection.Children().Each(func(_ int, li *goquery.Selection) {
+				arg := scrapingResourceList(li)
 				ret.Args = append(ret.Args, arg)
 			})
-		}
-
-		attr, _ := selection.Attr("id")
-		if selection.Is("h3") && attr != "example" {
+		} else {
+			fieldName := selection.Prev().Find("code,strong").Text()
 			for i, arg := range ret.Args {
-				if arg.Field_name == attr {
-					selection.NextAllFiltered("ul").First().Children().Each(func(_ int, li *goquery.Selection) {
-						ret.Args[i].Field = append(ret.Args[i].Field, ScrapingResourceList(li))
+				if arg.Name == fieldName {
+					selection.Children().Each(func(_ int, li *goquery.Selection) {
+						ret.Args[i].NestedField = append(ret.Args[i].NestedField, scrapingResourceList(li))
 					})
 				}
 			}

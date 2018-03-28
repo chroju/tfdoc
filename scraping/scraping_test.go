@@ -30,7 +30,7 @@ func TestScrapingDoc(t *testing.T) {
 
 	for i, v := range result.Args {
 		if v.Name == "ephemeral_block_device" && strings.Contains(v.Description, "Customize Ephemeral") {
-			if v.Field_name == "block_devices" {
+			if len(v.NestedField) == 3 {
 				break
 			}
 		}
