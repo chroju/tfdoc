@@ -4,24 +4,49 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/chroju/tfh/scraping"
+	"github.com/chroju/tfdoc/scraping"
 )
 
-func PrintTfResource(tfr *scraping.TfResource) {
+func PrintTfResourceDoc(tfr *scraping.TfResource) {
+	fmt.Println(tfr.Name + "\n" + tfr.Description + "\n\nArgument Reference (= is mandatory):\n")
+	printTfResourceArgsDoc(tfr.Args, 0)
+}
+
+func printTfResourceArgsDoc(args []*scraping.TfResourceArg, indent int) {
+	spaces := strings.Repeat("  ", indent)
+	for _, arg := range args {
+
+		var mark string
+		if arg.Required {
+			mark = "="
+		} else {
+			mark = "-"
+		}
+
+		descln := strings.Join(strings.SplitAfter(arg.Description, ". "), "\n"+spaces+"  ")
+		fmt.Println("\n" + spaces + mark + " " + arg.Name + "\n" + spaces + "  " + descln)
+		if len(arg.NestedField) > 0 {
+			printTfResourceArgsDoc(arg.NestedField, indent+1)
+		}
+	}
+}
+
+func PrintTfResourceSnippet(tfr *scraping.TfResource) {
 	fmt.Println("resource \"" + tfr.Name + "\" \"sample\" {")
-	PrintTfResourceArgs(tfr.Args, 1)
+	printTfResourceArgsSnippet(tfr.Args, 1)
 	fmt.Println("}")
 }
 
-func PrintTfResourceArgs(args []*scraping.TfResourceArg, indent int) {
+func printTfResourceArgsSnippet(args []*scraping.TfResourceArg, indent int) {
+	spaces := strings.Repeat("  ", indent)
 	for _, arg := range args {
 		fmt.Println("\n" + strings.Repeat("  ", indent) + "// " + arg.Description)
-		if len(arg.Field_name) > 0 {
-			fmt.Println("\n" + strings.Repeat("  ", indent) + arg.Name + " {")
-			PrintTfResourceArgs(arg.Field, indent+1)
-			fmt.Println(strings.Repeat("  ", indent) + "}\n")
+		if len(arg.NestedField) > 0 {
+			fmt.Println(spaces + arg.Name + " {")
+			printTfResourceArgsSnippet(arg.NestedField, indent+1)
+			fmt.Println(spaces + "}\n")
 		} else {
-			fmt.Println(strings.Repeat("  ", indent) + arg.Name + " = " + "\"" + arg.Field_name + "\"")
+			fmt.Println(spaces + arg.Name + " = " + "\"" + "\"")
 		}
 	}
 }

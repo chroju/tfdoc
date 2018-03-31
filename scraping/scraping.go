@@ -1,6 +1,8 @@
 package scraping
 
 import (
+	"fmt"
+	"net/http"
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
@@ -9,26 +11,31 @@ import (
 type TfResourceArg struct {
 	Name        string
 	Description string
-	Field_name  string
-	Field       []*TfResourceArg
+	NestedField []*TfResourceArg
 	Required    bool
 }
 
 type TfResource struct {
-	Name string
-	Args []*TfResourceArg
+	Name        string
+	Description string
+	Args        []*TfResourceArg
 }
 
-func GetResourceUrl(resource string) string {
+func GetResourceUrl(resource string) (string, error) {
+	if !strings.Contains(resource, "_") {
+		err := fmt.Errorf("resource name is invalid.")
+		return "", err
+	}
+
 	splited_resource := strings.SplitN(resource, "_", 2)
 	return "https://www.terraform.io/docs/providers/" +
-		splited_resource[0] + "/r/" + splited_resource[1] + ".html"
+		splited_resource[0] + "/r/" + splited_resource[1] + ".html", nil
 }
 
-func ScrapingResourceList(li *goquery.Selection) *TfResourceArg {
-	a := &TfResourceArg{Field_name: ""}
+func scrapingResourceList(li *goquery.Selection) *TfResourceArg {
+	a := &TfResourceArg{}
 	a.Name = li.Find("a > code").Text()
-	a.Description = "(" + strings.SplitN(li.Text(), "(", 2)[1]
+	a.Description = strings.TrimSpace(strings.SplitN(li.Text(), "-", 2)[1])
 	a.Description = strings.Replace(a.Description, "\n", "", -1)
 	if strings.Contains(strings.SplitN(li.Text(), " ", 3)[2], "Required") {
 		a.Required = true
@@ -38,42 +45,47 @@ func ScrapingResourceList(li *goquery.Selection) *TfResourceArg {
 	return a
 }
 
-func ScrapingDoc(url string) *TfResource {
+func ScrapingDoc(url string) (*TfResource, error) {
 	ret := &TfResource{Name: ""}
 
-	doc, err := goquery.NewDocument(url)
+	res, err := http.Get(url)
 	if err != nil {
-		// return fmt.Errorf("error: " + url)
-		// return "error: " + url
+		err = fmt.Errorf("URL Query error : %s", err)
+		return nil, err
 	}
 
-	inner := doc.Find("#inner").Children()
+	defer res.Body.Close()
+	if res.StatusCode != 200 {
+		err = fmt.Errorf("Status code error : %d %s", res.StatusCode, res.Status)
+		return nil, err
+	}
 
-	inner.Each(func(_ int, selection *goquery.Selection) {
-		if strings.Contains(selection.Text(), "The following arguments") {
-			selection.Next().Children().Each(func(_ int, li *goquery.Selection) {
-				arg := ScrapingResourceList(li)
-				if strings.Contains(arg.Description, "below for") {
-					start_at := strings.Index(arg.Description, "See") + 4
-					end_at := strings.LastIndex(arg.Description, "below") - 1
+	// Load the HTML document
+	doc, err := goquery.NewDocumentFromReader(res.Body)
+	if err != nil {
+		err = fmt.Errorf("URL Query error : %s", err)
+		return nil, err
+	}
 
-					arg.Field_name = strings.Replace(strings.ToLower(arg.Description[start_at:end_at]), " ", "-", -1)
-				}
+	ret.Description = strings.TrimSpace(doc.Find("#inner > p").First().Text())
+	ret.Description = strings.Replace(ret.Description, "\n", "", -1)
+	doc.Find("#inner > ul").Each(func(i int, selection *goquery.Selection) {
+		if i == 0 {
+			selection.Children().Each(func(_ int, li *goquery.Selection) {
+				arg := scrapingResourceList(li)
 				ret.Args = append(ret.Args, arg)
 			})
-		}
-
-		attr, _ := selection.Attr("id")
-		if selection.Is("h3") && attr != "example" {
+		} else {
+			fieldName := selection.Prev().Find("code,strong").Text()
 			for i, arg := range ret.Args {
-				if arg.Field_name == attr {
-					selection.NextAllFiltered("ul").First().Children().Each(func(_ int, li *goquery.Selection) {
-						ret.Args[i].Field = append(ret.Args[i].Field, ScrapingResourceList(li))
+				if arg.Name == fieldName {
+					selection.Children().Each(func(_ int, li *goquery.Selection) {
+						ret.Args[i].NestedField = append(ret.Args[i].NestedField, scrapingResourceList(li))
 					})
 				}
 			}
 		}
 	})
 
-	return ret
+	return ret, nil
 }
