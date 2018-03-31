@@ -1,6 +1,8 @@
 package scraping
 
 import (
+	"fmt"
+	"net/http"
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
@@ -14,14 +16,20 @@ type TfResourceArg struct {
 }
 
 type TfResource struct {
-	Name string
-	Args []*TfResourceArg
+	Name        string
+	Description string
+	Args        []*TfResourceArg
 }
 
-func GetResourceUrl(resource string) string {
+func GetResourceUrl(resource string) (string, error) {
+	if !strings.Contains(resource, "_") {
+		err := fmt.Errorf("resource name is invalid.")
+		return "", err
+	}
+
 	splited_resource := strings.SplitN(resource, "_", 2)
 	return "https://www.terraform.io/docs/providers/" +
-		splited_resource[0] + "/r/" + splited_resource[1] + ".html"
+		splited_resource[0] + "/r/" + splited_resource[1] + ".html", nil
 }
 
 func scrapingResourceList(li *goquery.Selection) *TfResourceArg {
@@ -37,15 +45,30 @@ func scrapingResourceList(li *goquery.Selection) *TfResourceArg {
 	return a
 }
 
-func ScrapingDoc(url string) *TfResource {
+func ScrapingDoc(url string) (*TfResource, error) {
 	ret := &TfResource{Name: ""}
 
-	doc, err := goquery.NewDocument(url)
+	res, err := http.Get(url)
 	if err != nil {
-		// return fmt.Errorf("error: " + url)
-		// return "error: " + url
+		err = fmt.Errorf("URL Query error : %s", err)
+		return nil, err
 	}
 
+	defer res.Body.Close()
+	if res.StatusCode != 200 {
+		err = fmt.Errorf("Status code error : %d %s", res.StatusCode, res.Status)
+		return nil, err
+	}
+
+	// Load the HTML document
+	doc, err := goquery.NewDocumentFromReader(res.Body)
+	if err != nil {
+		err = fmt.Errorf("URL Query error : %s", err)
+		return nil, err
+	}
+
+	ret.Description = strings.TrimSpace(doc.Find("#inner > p").First().Text())
+	ret.Description = strings.Replace(ret.Description, "\n", "", -1)
 	doc.Find("#inner > ul").Each(func(i int, selection *goquery.Selection) {
 		if i == 0 {
 			selection.Children().Each(func(_ int, li *goquery.Selection) {
@@ -64,5 +87,5 @@ func ScrapingDoc(url string) *TfResource {
 		}
 	})
 
-	return ret
+	return ret, nil
 }

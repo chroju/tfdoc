@@ -24,6 +24,10 @@ func TestGetResourceUrl(t *testing.T) {
 
 func TestScrapingDoc(t *testing.T) {
 	result := ScrapingDoc("http://www.terraform.io/docs/providers/aws/r/instance.html")
+	if !strings.Contains(result.Description, "Provides an EC2 instance resource.") {
+		t.Error("Terraform resource args is invalid" + result.Description)
+	}
+
 	if !containsTfResource(result, "instance_initiated_shutdown_behavior") {
 		t.Error("Terraform resource args is invalid")
 	}
