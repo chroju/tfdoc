@@ -5,6 +5,27 @@ import (
 	"testing"
 )
 
+func TestGetResourceList(t *testing.T) {
+	awsResourceList := `
+aws_cognito_identity_pool
+aws_cognito_identity_pool_roles_attachment
+aws_cognito_user_group
+	`
+	var cases = []struct {
+		arg      string
+		expected string
+	}{
+		{"aws", awsResourceList},
+	}
+
+	for _, testcase := range cases {
+		result := ScrapingResourceList(c.arg)
+		if !strings.Contains(result, c.expected) {
+			t.Error(result)
+		}
+	}
+}
+
 func TestGetResourceUrl(t *testing.T) {
 	result_aws := GetResourceUrl("aws_instance")
 	if result_aws != "https://www.terraform.io/docs/providers/aws/r/instance.html" {
