@@ -16,35 +16,36 @@ aws_cognito_user_group
 		expected string
 	}{
 		{"aws", awsResourceList},
+		{"azurerm", "azurerm_virtual_machine"},
 	}
 
-	for _, testcase := range cases {
-		result := ScrapingResourceList(c.arg)
+	for _, c := range cases {
+		result, _ := ScrapingResourceList(c.arg)
 		if !strings.Contains(result, c.expected) {
-			t.Error(result)
+			t.Error()
 		}
 	}
 }
 
 func TestGetResourceUrl(t *testing.T) {
-	result_aws := GetResourceUrl("aws_instance")
+	result_aws, _ := GetResourceUrl("aws_instance")
 	if result_aws != "https://www.terraform.io/docs/providers/aws/r/instance.html" {
 		t.Error(result_aws)
 	}
 
-	result_azure := GetResourceUrl("azurerm_virtual_machine")
+	result_azure, _ := GetResourceUrl("azurerm_virtual_machine")
 	if result_azure != "https://www.terraform.io/docs/providers/azurerm/r/virtual_machine.html" {
 		t.Error(result_azure)
 	}
 
-	result_grafana := GetResourceUrl("grafana_alert_notification")
+	result_grafana, _ := GetResourceUrl("grafana_alert_notification")
 	if result_grafana != "https://www.terraform.io/docs/providers/grafana/r/alert_notification.html" {
 		t.Error(result_grafana)
 	}
 }
 
 func TestScrapingDoc(t *testing.T) {
-	result := ScrapingDoc("http://www.terraform.io/docs/providers/aws/r/instance.html")
+	result, _ := ScrapingDoc("http://www.terraform.io/docs/providers/aws/r/instance.html")
 	if !strings.Contains(result.Description, "Provides an EC2 instance resource.") {
 		t.Error("Terraform resource args is invalid" + result.Description)
 	}
@@ -64,7 +65,7 @@ func TestScrapingDoc(t *testing.T) {
 		}
 	}
 
-	result = ScrapingDoc("http://www.terraform.io/docs/providers/aws/r/lambda_function.html")
+	result, _ = ScrapingDoc("http://www.terraform.io/docs/providers/aws/r/lambda_function.html")
 	if !containsTfResource(result, "function_name") {
 		t.Error("Terraform resource args is invalid")
 	}
