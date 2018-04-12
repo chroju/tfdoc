@@ -114,7 +114,6 @@ func ScrapingResourceList(provider string) (string, error) {
 			})
 		}
 	})
-	fmt.Println(result)
 
 	return result, nil
 }

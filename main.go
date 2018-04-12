@@ -17,8 +17,10 @@ const (
 func main() {
 	var isSnippet bool
 	var isUrl bool
+	var isList bool
 	flag.BoolVarP(&isSnippet, "snippet", "s", false, "output snippet")
-	flag.BoolVarP(&isUrl, "url", "u", false, "output snippet")
+	flag.BoolVarP(&isUrl, "url", "u", false, "output document url")
+	flag.BoolVarP(&isList, "list", "l", false, "output resource list")
 	flag.Parse()
 
 	if len(flag.Args()) != 1 {
@@ -27,30 +29,40 @@ func main() {
 
 	resourceName := flag.Args()[0]
 
-	url, err := scraping.GetResourceUrl(resourceName)
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(ExitCodeError)
-	}
+	if isList {
+		result, err := scraping.ScrapingResourceList(resourceName)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(ExitCodeError)
+		}
+		fmt.Println(result)
+		os.Exit(ExitCodeOK)
+	} else {
+		url, err := scraping.GetResourceUrl(resourceName)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(ExitCodeError)
+		}
 
-	if isUrl {
-		fmt.Println(url)
+		if isUrl {
+			fmt.Println(url)
+			os.Exit(ExitCodeOK)
+		}
+
+		resource, err := scraping.ScrapingDoc(url)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(ExitCodeError)
+		}
+		resource.Name = resourceName
+
+		if isSnippet {
+			printer.PrintTfResourceSnippet(resource)
+		} else {
+			printer.PrintTfResourceDoc(resource)
+		}
+
 		os.Exit(ExitCodeOK)
 	}
 
-	resource, err := scraping.ScrapingDoc(url)
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(ExitCodeError)
-	}
-	resource.Name = resourceName
-
-	if isSnippet {
-		printer.PrintTfResourceSnippet(resource)
-	} else if isUrl {
-	} else {
-		printer.PrintTfResourceDoc(resource)
-	}
-
-	os.Exit(ExitCodeOK)
 }
