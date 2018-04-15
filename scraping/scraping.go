@@ -107,9 +107,9 @@ func ScrapingResourceList(provider string) (string, error) {
 	// Load the HTML document
 	doc, err := goquery.NewDocumentFromReader(res.Body)
 
-	doc.Find(".nav-visible").Each(func(i int, selection *goquery.Selection) {
-		if i > 1 {
-			selection.Find("li").Each(func(_ int, li *goquery.Selection) {
+	doc.Find(".docs-sidenav > li").Each(func(i int, selection *goquery.Selection) {
+		if !(strings.Contains(selection.Text(), "Guides") || strings.Contains(selection.Text(), "Data Sources") || strings.Contains(selection.Text(), "Provider")) {
+			selection.Find(".nav-visible > li").Each(func(_ int, li *goquery.Selection) {
 				result = result + strings.TrimSpace(li.Text()) + "\n"
 			})
 		}

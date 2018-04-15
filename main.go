@@ -15,6 +15,11 @@ const (
 )
 
 func main() {
+	run(os.Args)
+}
+
+func run(args []string) {
+	os.Args = args
 	var isSnippet bool
 	var isUrl bool
 	var isList bool
