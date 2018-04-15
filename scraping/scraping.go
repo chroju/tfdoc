@@ -89,3 +89,31 @@ func ScrapingDoc(url string) (*TfResource, error) {
 
 	return ret, nil
 }
+
+func ScrapingResourceList(provider string) (string, error) {
+	result := ""
+	res, err := http.Get("https://www.terraform.io/docs/providers/" + provider + "/index.html")
+	if err != nil {
+		err = fmt.Errorf("Provider error : %s", err)
+		return "", err
+	}
+
+	defer res.Body.Close()
+	if res.StatusCode != 200 {
+		err = fmt.Errorf("Status code error : %d %s", res.StatusCode, res.Status)
+		return "", err
+	}
+
+	// Load the HTML document
+	doc, err := goquery.NewDocumentFromReader(res.Body)
+
+	doc.Find(".docs-sidenav > li").Each(func(i int, selection *goquery.Selection) {
+		if !(strings.Contains(selection.Text(), "Guides") || strings.Contains(selection.Text(), "Data Sources") || strings.Contains(selection.Text(), "Provider")) {
+			selection.Find(".nav-visible > li").Each(func(_ int, li *goquery.Selection) {
+				result = result + strings.TrimSpace(li.Text()) + "\n"
+			})
+		}
+	})
+
+	return result, nil
+}
