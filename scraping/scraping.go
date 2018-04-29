@@ -8,67 +8,97 @@ import (
 	"github.com/PuerkitoBio/goquery"
 )
 
-type TfResourceArg struct {
-	Name        string
-	Description string
-	NestedField []*TfResourceArg
-	Required    bool
+type TfScraper struct {
+	Name    string
+	DocType string
+	Url     string
 }
 
-type TfResource struct {
-	Name        string
-	Description string
-	Args        []*TfResourceArg
+type TfObject interface {
+	Doc(bool) (doc string)
 }
 
-func GetResourceUrl(resource string) (string, error) {
-	if !strings.Contains(resource, "_") {
-		err := fmt.Errorf("resource name is invalid.")
-		return "", err
+func NewScraper(docType string, name string) (*TfScraper, error) {
+	s := TfScraper{Name: name, DocType: docType}
+
+	err := s.convertDocUrl()
+	if err != nil {
+		return nil, err
 	}
 
-	splited_resource := strings.SplitN(resource, "_", 2)
-	return "https://www.terraform.io/docs/providers/" +
-		splited_resource[0] + "/r/" + splited_resource[1] + ".html", nil
+	return &s, nil
 }
 
-func scrapingResourceList(li *goquery.Selection) *TfResourceArg {
-	a := &TfResourceArg{}
-	a.Name = li.Find("a > code").Text()
-	a.Description = strings.TrimSpace(strings.SplitN(li.Text(), "-", 2)[1])
-	a.Description = strings.Replace(a.Description, "\n", "", -1)
-	if strings.Contains(strings.SplitN(li.Text(), " ", 3)[2], "Required") {
-		a.Required = true
-	} else {
-		a.Required = false
+// convert resource or provider name to document url.
+func (s *TfScraper) convertDocUrl() error {
+	var url string
+
+	switch s.DocType {
+	case "provider":
+		url = "https://www.terraform.io/docs/providers/" + s.Name + "/index.html"
+	case "resource":
+		if !strings.Contains(s.Name, "_") {
+			return fmt.Errorf("resource name is invalid.")
+		}
+
+		splited := strings.SplitN(s.Name, "_", 2)
+		url = "https://www.terraform.io/docs/providers/" + splited[0] + "/r/" + splited[1] + ".html"
 	}
-	return a
+
+	_, err := http.Get(url)
+	if err != nil {
+		return fmt.Errorf("Provider error : %s", err)
+	}
+
+	s.Url = url
+	return nil
 }
 
-func ScrapingDoc(url string) (*TfResource, error) {
-	ret := &TfResource{Name: ""}
+// scrape from web
+func (s *TfScraper) Scrape() (TfObject, error) {
+	res, err := http.Get(s.Url)
+	defer res.Body.Close()
 
-	res, err := http.Get(url)
 	if err != nil {
 		err = fmt.Errorf("URL Query error : %s", err)
 		return nil, err
 	}
 
-	defer res.Body.Close()
 	if res.StatusCode != 200 {
 		err = fmt.Errorf("Status code error : %d %s", res.StatusCode, res.Status)
 		return nil, err
 	}
 
+	var tfo TfObject
+	switch s.DocType {
+	case "resource":
+		tfo, err = scrapeTfResource(res)
+		if err != nil {
+			err = fmt.Errorf("Scraping error : %s", err)
+			return nil, err
+		}
+	case "provider":
+		tfo, err = scrapeTfProvider(res)
+		if err != nil {
+			err = fmt.Errorf("Scraping error : %s", err)
+			return nil, err
+		}
+	}
+
+	return tfo, nil
+}
+
+func scrapeTfResource(res *http.Response) (*TfResource, error) {
+	var ret TfResource
+
 	// Load the HTML document
 	doc, err := goquery.NewDocumentFromReader(res.Body)
 	if err != nil {
-		err = fmt.Errorf("URL Query error : %s", err)
+		err = fmt.Errorf("HTML Read error: %s", err)
 		return nil, err
 	}
 
-	ret.Description = strings.TrimSpace(doc.Find("#inner > p").First().Text())
-	ret.Description = strings.Replace(ret.Description, "\n", "", -1)
+	ret.Description = strings.Replace(strings.TrimSpace(doc.Find("#inner > p").First().Text()), "\n", "", -1)
 	doc.Find("#inner > ul").Each(func(i int, selection *goquery.Selection) {
 		if i == 0 {
 			selection.Children().Each(func(_ int, li *goquery.Selection) {
@@ -87,33 +117,39 @@ func ScrapingDoc(url string) (*TfResource, error) {
 		}
 	})
 
-	return ret, nil
+	return &ret, nil
 }
 
-func ScrapingResourceList(provider string) (string, error) {
-	result := ""
-	res, err := http.Get("https://www.terraform.io/docs/providers/" + provider + "/index.html")
-	if err != nil {
-		err = fmt.Errorf("Provider error : %s", err)
-		return "", err
+func scrapingResourceList(li *goquery.Selection) *tfResourceArg {
+	a := &tfResourceArg{}
+	a.Name = li.Find("a > code").Text()
+	a.Description = strings.TrimSpace(strings.SplitN(li.Text(), "-", 2)[1])
+	a.Description = strings.Replace(a.Description, "\n", "", -1)
+	if strings.Contains(strings.SplitN(li.Text(), " ", 3)[2], "Required") {
+		a.Required = true
+	} else {
+		a.Required = false
 	}
+	return a
+}
 
-	defer res.Body.Close()
-	if res.StatusCode != 200 {
-		err = fmt.Errorf("Status code error : %d %s", res.StatusCode, res.Status)
-		return "", err
-	}
+func scrapeTfProvider(res *http.Response) (*TfProvider, error) {
+	var ret TfProvider
 
 	// Load the HTML document
 	doc, err := goquery.NewDocumentFromReader(res.Body)
+	if err != nil {
+		err = fmt.Errorf("HTML Read error: %s", err)
+		return nil, err
+	}
 
 	doc.Find(".docs-sidenav > li").Each(func(i int, selection *goquery.Selection) {
 		if !(strings.Contains(selection.Text(), "Guides") || strings.Contains(selection.Text(), "Data Sources") || strings.Contains(selection.Text(), "Provider")) {
 			selection.Find(".nav-visible > li").Each(func(_ int, li *goquery.Selection) {
-				result = result + strings.TrimSpace(li.Text()) + "\n"
+				ret.ResourceList = append(ret.ResourceList, strings.TrimSpace(li.Text()))
 			})
 		}
 	})
 
-	return result, nil
+	return &ret, nil
 }
