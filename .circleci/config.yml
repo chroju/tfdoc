@@ -8,14 +8,15 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-        keys:
-          - vendor
-      - run: dep ensure
+          keys:
+            - vendor
+      - run: go get github.com/golang/dep/cmd/dep
+      - run: dep ensure -v
       - save_cache:
           key: vendor-{{ checksum "Gopkg.lock" }}
           paths:
             - /go/src/github.com/chroju/tfdoc/vendor
-      - run: go test -v -race ./...
+      - run: go test -v ./...
       - save_cache:
           key: source-{{ epoch }}
           paths:
