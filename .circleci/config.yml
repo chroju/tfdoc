@@ -17,13 +17,13 @@ jobs:
       - save_cache:
           key: vendor-{{ checksum "Gopkg.lock" }}
           paths:
-            - ${CIRCLE_WORKING_DIRECTORY}/vendor
+            - vendor
       - run: go test -v -covermode=count -coverprofile=coverage.out ./scraping
       - run: goveralls -coverprofile=coverage.out -service=circle-ci -repotoken $COVERALLS_REPO_TOKEN
       - save_cache:
           key: source-{{ epoch }}
           paths:
-            - ${CIRCLE_WORKING_DIRECTORY}
+            - ~
   deploy:
     docker:
       - image: circleci/golang:1.9
@@ -34,7 +34,7 @@ jobs:
             - source
       - run: go get github.com/mitchellh/gox
       - run: go get github.com/tcnksm/ghr
-      - run: gox -os="linux windows" -arch="386 amd64" -output "bin/{{.OS}}_{{.Arch}}/{{.Dir}}"
+      - run: gox -os="linux darwin windows" -arch="386 amd64" -output "bin/{{.OS}}_{{.Arch}}/{{.Dir}}"
       - run: ${CIRCLE_WORKING_DIRECTORY}/.circleci/compress_binaries.sh
       - run: ghr -t $GITHUB_TOKEN -u $CIRCLE_PROJECT_USERNAME -r $CIRCLE_PROJECT_REPONAME $CIRCLE_TAG pkg/
 
@@ -45,8 +45,6 @@ workflows:
       - test:
           filters:
             tags:
-              only: /.*/
-            branches:
               only: /.*/
       - deploy:
           filters:
