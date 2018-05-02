@@ -1,7 +1,7 @@
-**NOTE: tfdoc is under construction. The contents of the under consideration in this document.**
-
 tfdoc
 ====
+
+[![Coverage Status](https://coveralls.io/repos/github/chroju/tfdoc/badge.svg?branch=test-ci)](https://coveralls.io/github/chroju/tfdoc?branch=test-ci) [![Go Report Card](https://goreportcard.com/badge/github.com/chroju/tfdoc)](https://goreportcard.com/report/github.com/chroju/tfdoc) [![CircleCI](https://circleci.com/gh/chroju/tfdoc/tree/master.svg?style=svg)](https://circleci.com/gh/chroju/tfdoc/tree/master)
 
 tfdoc is a [Terraform](https://github.com/hashicorp/terraform) helper tool.
 
@@ -10,6 +10,16 @@ Description
 ----
 
 tfdoc provides the Terraform documents about each resources on your terminal, like `ansible-doc` command. You don't need to check the documents with your web browser any more.
+
+
+Install
+----
+
+Using `go get` or download binaries from [Releases](https://github.com/chroju/tfdoc/releases).
+
+```bash
+$ go get github.com/chroju/tfdoc
+```
 
 
 Usage
@@ -50,10 +60,10 @@ https://www.terraform.io/docs/providers/aws/r/instance.html
 
 ### --snippet, -s
 
-Output in the snippet format.
+Output in the snippet format like this.
 
 ```
-$ tfdoc --snippet <resource>
+$ tfdoc --snippet aws_instance
 resource "aws_instance" "sample" {
 
   // (Required) The AMI to use for the instance.
@@ -69,14 +79,31 @@ resource "aws_instance" "sample" {
 }
 ```
 
-The below options are under construction.
+When using `--snippet` option, you can control output format more finely with some options. Using `--only-required` make a snippet with only required arguments, and `--no-comments` option eliminate all comments.
+
+### --list, -l
+
+List available resources with given provider.
 
 ```
-$ tfdoc --import <resource>
-$ tfdoc --list <provider>
-$ tfdoc --snippet --only-required <resource>
-$ tfdoc --snippet --no-comments <resource>
+$ tfdoc -l azurerm
+azurerm_resource_group
+azurerm_app_service
+azurerm_app_service_plan
+azurerm_app_service_active_slot
+azurerm_app_service_custom_hostname_binding
+azurerm_app_service_slot
+azurerm_function_app
+azurerm_role_assignment
 ```
+
+
+ToDo
+----
+
+- [ ] Improve visualization of outputs with colors and decoration.
+- [ ] Rewrite snippets to canonical format and style like `terraform fmt` command.
+- [ ] Increse the test coverage.
 
 
 License
