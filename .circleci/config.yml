@@ -27,8 +27,8 @@ jobs:
     working_directory: /go/src/github.com/chroju/tfdoc
     steps:
       - restore_cache:
-        keys:
-          - source
+          keys:
+            - source
       - run: go get github.com/mitchellh/gox
       - run: go get github.com/tcnksm/ghr
       - run: gox -output "bin/{{.Dir}}_{{.OS}}_{{.Arch}}"
