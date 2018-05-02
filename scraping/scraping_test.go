@@ -5,87 +5,40 @@ import (
 	"testing"
 )
 
-func TestGetResourceList(t *testing.T) {
-	awsResourceList := `
-aws_cognito_identity_pool
-aws_cognito_identity_pool_roles_attachment
-aws_cognito_user_group
-	`
+func TestTfResourceConvertURL(t *testing.T) {
 	var cases = []struct {
-		arg      string
-		expected string
+		resourceName string
+		expectedURL  string
 	}{
-		{"aws", awsResourceList},
-		{"azurerm", "azurerm_virtual_machine"},
+		{"aws_instance", "https://www.terraform.io/docs/providers/aws/r/instance.html"},
+		{"aws_lb_listener", "https://www.terraform.io/docs/providers/aws/r/lb_listener.html"},
+		{"azurerm_container_group", "https://www.terraform.io/docs/providers/azurerm/r/container_group.html"},
+		{"grafana_dashboard", "https://www.terraform.io/docs/providers/grafana/r/dashboard.html"},
 	}
 
 	for _, c := range cases {
-		result, _ := ScrapingResourceList(c.arg)
-		if !strings.Contains(result, c.expected) {
+		scraper, _ := NewScraper("resource", c.resourceName)
+		if !strings.Contains(scraper.Url, c.expectedURL) {
 			t.Error()
 		}
 	}
 }
 
-func TestGetResourceUrl(t *testing.T) {
-	result_aws, _ := GetResourceUrl("aws_instance")
-	if result_aws != "https://www.terraform.io/docs/providers/aws/r/instance.html" {
-		t.Error(result_aws)
+func TestTfProviderConvertURL(t *testing.T) {
+	var cases = []struct {
+		providerName string
+		expectedURL  string
+	}{
+		{"aws", "https://www.terraform.io/docs/providers/aws/index.html"},
+		{"grafana", "https://www.terraform.io/docs/providers/grafana/index.html"},
+		{"terraform-enterprise", "https://www.terraform.io/docs/providers/terraform-enterprise/index.html"},
+		{"nsxt", "https://www.terraform.io/docs/providers/nsxt/index.html"},
 	}
 
-	result_azure, _ := GetResourceUrl("azurerm_virtual_machine")
-	if result_azure != "https://www.terraform.io/docs/providers/azurerm/r/virtual_machine.html" {
-		t.Error(result_azure)
-	}
-
-	result_grafana, _ := GetResourceUrl("grafana_alert_notification")
-	if result_grafana != "https://www.terraform.io/docs/providers/grafana/r/alert_notification.html" {
-		t.Error(result_grafana)
-	}
-}
-
-func TestScrapingDoc(t *testing.T) {
-	result, _ := ScrapingDoc("http://www.terraform.io/docs/providers/aws/r/instance.html")
-	if !strings.Contains(result.Description, "Provides an EC2 instance resource.") {
-		t.Error("Terraform resource args is invalid" + result.Description)
-	}
-
-	if !containsTfResource(result, "instance_initiated_shutdown_behavior") {
-		t.Error("Terraform resource args is invalid")
-	}
-
-	for i, v := range result.Args {
-		if v.Name == "ephemeral_block_device" && strings.Contains(v.Description, "Customize Ephemeral") {
-			if len(v.NestedField) == 3 {
-				break
-			}
-		}
-		if i == len(result.Args) {
-			t.Error("Terraform resource args is invalid")
+	for _, c := range cases {
+		scraper, _ := NewScraper("provider", c.providerName)
+		if !strings.Contains(scraper.Url, c.expectedURL) {
+			t.Errorf("expect: %s \n result: %s", c.expectedURL, scraper.Url)
 		}
 	}
-
-	result, _ = ScrapingDoc("http://www.terraform.io/docs/providers/aws/r/lambda_function.html")
-	if !containsTfResource(result, "function_name") {
-		t.Error("Terraform resource args is invalid")
-	}
-
-	for i, v := range result.Args {
-		if v.Name == "s3_bucket" && strings.Contains(v.Description, "The S3 bucket location") {
-			break
-		}
-		if i == len(result.Args) {
-			t.Error("Terraform resource args is invalid")
-		}
-	}
-
-}
-
-func containsTfResource(tfr *TfResource, arg_key string) bool {
-	for _, v := range tfr.Args {
-		if v.Name == arg_key {
-			return true
-		}
-	}
-	return false
 }
