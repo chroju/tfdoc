@@ -35,22 +35,34 @@ func run(args []string) ([]string, int) {
 	var isSnippet bool
 	var isURL bool
 	var isList bool
+	var isVersion bool
 	var needlessComment bool
 	var requiredOnly bool
-	flag.BoolVarP(&isSnippet, "snippet", "s", false, "output snippet")
+	// snippetCommand := flag.NewFlagSet("snippet", flag.ExitOnError)
+	flag.BoolVar(&needlessComment, "no-comments", false, "use with -s to output without comments")
+	flag.BoolVar(&requiredOnly, "only-required", false, "use with -s to output only required arguments")
+	flag.BoolVarP(&isSnippet, "snippet", "s", false, "output snippet format")
 	flag.BoolVarP(&isURL, "url", "u", false, "output document url")
-	flag.BoolVarP(&isList, "list", "l", false, "output resource list")
-	flag.BoolVar(&needlessComment, "no-comments", false, "output snippets with no comment")
-	flag.BoolVar(&requiredOnly, "required-only", false, "output only required arguments")
+	flag.BoolVarP(&isList, "list", "l", false, "list resources about given provider")
+	flag.BoolVarP(&isVersion, "version", "v", false, "show version")
+	flag.Usage = func() {
+		fmt.Fprintf(os.Stderr, "Usage: %s [option] RESOURCE or PROVIDER\n", name)
+		fmt.Fprintf(os.Stderr, "\n%s\n\n", description)
+		flag.PrintDefaults()
+	}
 	flag.Parse()
 
+	// -v option
+	if isVersion {
+		return []string{name + " " + version}, ExitCodeError
+	}
+
 	if len(flag.Args()) != 1 {
+		flag.Usage()
 		return []string{""}, ExitCodeError
 	}
 
 	target := flag.Args()[0]
-
-	// -v and -h option
 
 	// --list option
 	var tfResourceType string
