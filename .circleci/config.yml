@@ -11,12 +11,15 @@ jobs:
           keys:
             - vendor
       - run: go get github.com/golang/dep/cmd/dep
+      - run: go get golang.org/x/tools/cmd/cover
+      - run: go get github.com/mattn/goveralls
       - run: dep ensure -v
       - save_cache:
           key: vendor-{{ checksum "Gopkg.lock" }}
           paths:
             - /go/src/github.com/chroju/tfdoc/vendor
-      - run: go test -v ./...
+      - run: go test -v -covermode=count -coverprofile=coverage.out ./scraping
+      - run: goveralls -coverprofile=coverage.out -service=circle-ci -repotoken $COVERALLS_REPO_TOKEN
       - save_cache:
           key: source-{{ epoch }}
           paths:
