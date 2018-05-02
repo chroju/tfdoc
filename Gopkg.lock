@@ -14,53 +14,6 @@
   version = "v1.0.0"
 
 [[projects]]
-  branch = "master"
-  name = "github.com/armon/go-radix"
-  packages = ["."]
-  revision = "1fca145dffbcaa8fe914309b1ec0cfc67500fe61"
-
-[[projects]]
-  name = "github.com/bgentry/speakeasy"
-  packages = ["."]
-  revision = "4aabc24848ce5fd31929f7d1e4ea74d3709c14cd"
-  version = "v0.1.0"
-
-[[projects]]
-  branch = "master"
-  name = "github.com/hashicorp/errwrap"
-  packages = ["."]
-  revision = "7554cd9344cec97297fa6649b055a8c98c2a1e55"
-
-[[projects]]
-  branch = "master"
-  name = "github.com/hashicorp/go-multierror"
-  packages = ["."]
-  revision = "b7773ae218740a7be65057fc60b366a49b538a44"
-
-[[projects]]
-  name = "github.com/mattn/go-isatty"
-  packages = ["."]
-  revision = "0360b2af4f38e8d38c7fce2a9f4e702702d73a39"
-  version = "v0.0.3"
-
-[[projects]]
-  branch = "master"
-  name = "github.com/mitchellh/cli"
-  packages = ["."]
-  revision = "b068abc08c994321eafd9fd500d0704cb6defcb1"
-
-[[projects]]
-  name = "github.com/posener/complete"
-  packages = [
-    ".",
-    "cmd",
-    "cmd/install",
-    "match"
-  ]
-  revision = "98eb9847f27ba2008d380a32c98be474dea55bdf"
-  version = "v1.1.1"
-
-[[projects]]
   name = "github.com/spf13/pflag"
   packages = ["."]
   revision = "e57e3eeb33f795204c1ca35f56c44f83227c6e66"
@@ -75,15 +28,9 @@
   ]
   revision = "d0aafc73d5cdc42264b0af071c261abac580695e"
 
-[[projects]]
-  branch = "master"
-  name = "golang.org/x/sys"
-  packages = ["unix"]
-  revision = "378d26f46672a356c46195c28f61bdb4c0a781dd"
-
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "e465740c3a67a95ef926d7cd4feaf30b8737ada4166b95e866e87bad43f15b81"
+  inputs-digest = "e317d03708034964209e28d4e1a0eb53465a5ffdee392060cef57c6ff06a29cc"
   solver-name = "gps-cdcl"
   solver-version = 1
