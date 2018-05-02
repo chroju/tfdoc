@@ -15,7 +15,7 @@ type TfScraper struct {
 }
 
 type TfObject interface {
-	Doc(bool) (doc string)
+	Doc(...bool) (doc []string)
 }
 
 func NewScraper(docType string, name string) (*TfScraper, error) {
@@ -72,13 +72,13 @@ func (s *TfScraper) Scrape() (TfObject, error) {
 	var tfo TfObject
 	switch s.DocType {
 	case "resource":
-		tfo, err = scrapeTfResource(res)
+		tfo, err = scrapeTfResource(s.Name, res)
 		if err != nil {
 			err = fmt.Errorf("Scraping error : %s", err)
 			return nil, err
 		}
 	case "provider":
-		tfo, err = scrapeTfProvider(res)
+		tfo, err = scrapeTfProvider(s.Name, res)
 		if err != nil {
 			err = fmt.Errorf("Scraping error : %s", err)
 			return nil, err
@@ -88,8 +88,8 @@ func (s *TfScraper) Scrape() (TfObject, error) {
 	return tfo, nil
 }
 
-func scrapeTfResource(res *http.Response) (*TfResource, error) {
-	var ret TfResource
+func scrapeTfResource(name string, res *http.Response) (*TfResource, error) {
+	var ret = TfResource{Name: name}
 
 	// Load the HTML document
 	doc, err := goquery.NewDocumentFromReader(res.Body)
@@ -133,8 +133,8 @@ func scrapingResourceList(li *goquery.Selection) *tfResourceArg {
 	return a
 }
 
-func scrapeTfProvider(res *http.Response) (*TfProvider, error) {
-	var ret TfProvider
+func scrapeTfProvider(name string, res *http.Response) (*TfProvider, error) {
+	var ret = TfProvider{Name: name}
 
 	// Load the HTML document
 	doc, err := goquery.NewDocumentFromReader(res.Body)
