@@ -2,6 +2,8 @@ package scraping
 
 import (
 	"strings"
+
+	"github.com/hashicorp/hcl/hcl/printer"
 )
 
 type tfResourceArg struct {
@@ -63,6 +65,9 @@ func (t *TfResource) Snippet(needlessComment bool, requiredOnly bool) []string {
 	ret = append(ret, "resource \""+t.Name+"\" \"sample\" {")
 	ret = append(ret, printTfResourceArgsSnippet(t.Args, 1, needlessComment, requiredOnly)...)
 	ret = append(ret, "}")
+
+	formatted, _ := printer.Format([]byte(strings.Join(ret, "\n")))
+	ret = strings.Split(string(formatted), "\n")
 	return ret
 }
 
@@ -84,8 +89,6 @@ func printTfResourceArgsSnippet(args []*tfResourceArg, indent int, needlessComme
 		} else {
 			ret = append(ret, spaces+arg.Name+" = "+"\""+"\"")
 		}
-
-		ret = append(ret, "")
 	}
 
 	return ret

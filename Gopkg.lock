@@ -14,6 +14,19 @@
   version = "v1.0.0"
 
 [[projects]]
+  branch = "master"
+  name = "github.com/hashicorp/hcl"
+  packages = [
+    "hcl/ast",
+    "hcl/parser",
+    "hcl/printer",
+    "hcl/scanner",
+    "hcl/strconv",
+    "hcl/token"
+  ]
+  revision = "ef8a98b0bbce4a65b5aa4c368430a80ddc533168"
+
+[[projects]]
   name = "github.com/spf13/pflag"
   packages = ["."]
   revision = "e57e3eeb33f795204c1ca35f56c44f83227c6e66"
@@ -31,6 +44,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "e317d03708034964209e28d4e1a0eb53465a5ffdee392060cef57c6ff06a29cc"
+  inputs-digest = "b748e7c8d14a729b7460461e9ac1f9c2461426cffa7eaf61c35261724980babf"
   solver-name = "gps-cdcl"
   solver-version = 1
