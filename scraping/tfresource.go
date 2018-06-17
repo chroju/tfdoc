@@ -3,6 +3,7 @@ package scraping
 import (
 	"strings"
 
+	"github.com/fatih/color"
 	"github.com/hashicorp/hcl/hcl/printer"
 )
 
@@ -20,6 +21,7 @@ type TfResource struct {
 }
 
 func (t *TfResource) Doc(opts ...bool) []string {
+	bold := color.New(color.Bold, color.Underline).SprintFunc()
 	isSnippet := opts[0]
 	needlessComment := opts[1]
 	requiredOnly := opts[2]
@@ -27,15 +29,18 @@ func (t *TfResource) Doc(opts ...bool) []string {
 		return t.Snippet(needlessComment, requiredOnly)
 	}
 	var ret []string
-	ret = append(ret, t.Name, t.Description, "", "Argument Reference (= is mandatory):", "")
+	ret = append(ret, bold(t.Name), "")
+	ret = append(ret, strings.SplitAfter(t.Description, ". ")...)
+	ret = append(ret, "", "", "Argument Reference (= is mandatory):")
 	ret = append(ret, printTfResourceArgsDoc(t.Args, 0)...)
+	ret = append(ret, "")
 	return ret
 }
 
 func printTfResourceArgsDoc(args []*tfResourceArg, indent int) []string {
 	var ret []string
 
-	spaces := strings.Repeat("  ", indent)
+	spaces := strings.Repeat("    ", indent)
 	for _, arg := range args {
 		ret = append(ret, "")
 		var mark string
@@ -47,7 +52,7 @@ func printTfResourceArgsDoc(args []*tfResourceArg, indent int) []string {
 
 		descln := strings.SplitAfter(arg.Description, ". ")
 		for i, v := range descln {
-			descln[i] = spaces + "  " + v
+			descln[i] = spaces + "    " + v
 		}
 		ret = append(ret, spaces+mark+" "+arg.Name)
 		ret = append(ret, descln...)
