@@ -125,7 +125,7 @@ func scrapingResourceList(li *goquery.Selection) *tfResourceArg {
 	a.Name = li.Find("a > code").Text()
 	a.Description = strings.TrimSpace(strings.SplitN(li.Text(), "-", 2)[1])
 	a.Description = strings.Replace(a.Description, "\n", "", -1)
-	if strings.Contains(strings.SplitN(li.Text(), " ", 3)[2], "Required") {
+	if strings.Contains(strings.SplitN(li.Text(), " ", 4)[2], "Required") {
 		a.Required = true
 	} else {
 		a.Required = false
@@ -143,7 +143,8 @@ func scrapeTfProvider(name string, res *http.Response) (*TfProvider, error) {
 		return nil, err
 	}
 
-	doc.Find(".docs-sidenav > li").Each(func(i int, selection *goquery.Selection) {
+	// doc.Find(".docs-sidenav > li").Each(func(i int, selection *goquery.Selection) {
+	doc.Find(".docs-sidenav").Children().Each(func(i int, selection *goquery.Selection) {
 		if !(strings.Contains(selection.Text(), "Guides") || strings.Contains(selection.Text(), "Data Sources") || strings.Contains(selection.Text(), "Provider")) {
 			selection.Find(".nav-visible > li").Each(func(_ int, li *goquery.Selection) {
 				ret.ResourceList = append(ret.ResourceList, strings.TrimSpace(li.Text()))
