@@ -43,10 +43,12 @@ func (s *TfScraper) convertDocUrl() error {
 
 		splited := strings.SplitN(s.Name, "_", 2)
 		url = "https://www.terraform.io/docs/providers/" + splited[0] + "/r/" + splited[1] + ".html"
+	default:
+		return fmt.Errorf("DocType must be provider or resource")
 	}
 
-	_, err := http.Get(url)
-	if err != nil {
+	resp, err := http.Get(url)
+	if err != nil || resp.StatusCode != 200 {
 		return fmt.Errorf("Provider error : %s", err)
 	}
 

@@ -24,6 +24,24 @@ func TestTfResourceConvertURL(t *testing.T) {
 	}
 }
 
+func TestConvertURLError(t *testing.T) {
+	var cases = []struct {
+		docType      string
+		resourceName string
+	}{
+		{"resource", "awsinstance"},
+		{"errorDocType", "aws_lb_listener"},
+		{"resource", "aws_lb_listener_error"},
+	}
+
+	for _, c := range cases {
+		scraper, err := NewScraper(c.docType, c.resourceName)
+		if err == nil {
+			t.Errorf("url: %s, docType: %s, resourceName: %s", scraper.Url, c.docType, c.resourceName)
+		}
+	}
+}
+
 func TestTfProviderConvertURL(t *testing.T) {
 	var cases = []struct {
 		providerName string
