@@ -39,30 +39,31 @@ func run(args []string) ([]string, int) {
 	var needlessComment bool
 	var requiredOnly bool
 	// snippetCommand := flag.NewFlagSet("snippet", flag.ExitOnError)
-	flag.BoolVar(&needlessComment, "no-comments", false, "use with -s to output without comments")
-	flag.BoolVar(&requiredOnly, "only-required", false, "use with -s to output only required arguments")
-	flag.BoolVarP(&isSnippet, "snippet", "s", false, "output snippet format")
-	flag.BoolVarP(&isURL, "url", "u", false, "output document url")
-	flag.BoolVarP(&isList, "list", "l", false, "list resources about given provider")
-	flag.BoolVarP(&isVersion, "version", "v", false, "show version")
-	flag.Usage = func() {
+	f := flag.NewFlagSet(os.Args[0], flag.ExitOnError)
+	f.BoolVar(&needlessComment, "no-comments", false, "use with -s to output without comments")
+	f.BoolVar(&requiredOnly, "only-required", false, "use with -s to output only required arguments")
+	f.BoolVarP(&isSnippet, "snippet", "s", false, "output snippet format")
+	f.BoolVarP(&isURL, "url", "u", false, "output document url")
+	f.BoolVarP(&isList, "list", "l", false, "list resources about given provider")
+	f.BoolVarP(&isVersion, "version", "v", false, "show version")
+	f.Usage = func() {
 		fmt.Fprintf(os.Stderr, "Usage: %s [option] RESOURCE or PROVIDER\n", name)
 		fmt.Fprintf(os.Stderr, "\n%s\n\n", description)
 		flag.PrintDefaults()
 	}
-	flag.Parse()
+	f.Parse(os.Args[1:])
 
 	// -v option
 	if isVersion {
 		return []string{name + " " + version}, ExitCodeError
 	}
 
-	if len(flag.Args()) != 1 {
-		flag.Usage()
+	if len(f.Args()) != 1 {
+		f.Usage()
 		return []string{""}, ExitCodeError
 	}
 
-	target := flag.Args()[0]
+	target := f.Args()[0]
 
 	// --list option
 	var tfResourceType string
