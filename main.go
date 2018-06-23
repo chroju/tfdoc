@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"io"
 	"os"
 	"strings"
 
@@ -21,23 +20,16 @@ const (
 	ExitCodeOK = iota
 	// ExitCodeError error code
 	ExitCodeError
-	// ExitCodeHelp error code
-	ExitCodeHelp
 )
 
-// CLI provides command line interface
-type CLI struct {
-	outStream, errStream io.Writer
-}
-
 func main() {
-	cli := &CLI{outStream: os.Stdout, errStream: os.Stderr}
-	exitCode := cli.Run(os.Args)
+	result, exitCode := run(os.Args)
+	fmt.Println(strings.Join(result, "\n"))
 	os.Exit(exitCode)
 }
 
-// Run command line process
-func (c *CLI) Run(args []string) int {
+func run(args []string) ([]string, int) {
+	os.Args = args
 
 	// parse flags
 	var isSnippet bool
@@ -46,40 +38,31 @@ func (c *CLI) Run(args []string) int {
 	var isVersion bool
 	var needlessComment bool
 	var requiredOnly bool
-
-	f := flag.NewFlagSet(args[0], flag.ContinueOnError)
-	f.SetOutput(c.errStream)
-	f.BoolVar(&needlessComment, "no-comments", false, "use with -s to output without comments")
-	f.BoolVar(&requiredOnly, "only-required", false, "use with -s to output only required arguments")
-	f.BoolVarP(&isSnippet, "snippet", "s", false, "output snippet format")
-	f.BoolVarP(&isURL, "url", "u", false, "output document url")
-	f.BoolVarP(&isList, "list", "l", false, "list resources about given provider")
-	f.BoolVarP(&isVersion, "version", "v", false, "show version")
-	f.Usage = func() {
-		fmt.Fprintf(c.errStream, "Usage: %s [option] RESOURCE or PROVIDER\n", name)
-		fmt.Fprintf(c.errStream, "\n%s\n\n", description)
-		f.PrintDefaults()
+	// snippetCommand := flag.NewFlagSet("snippet", flag.ExitOnError)
+	flag.BoolVar(&needlessComment, "no-comments", false, "use with -s to output without comments")
+	flag.BoolVar(&requiredOnly, "only-required", false, "use with -s to output only required arguments")
+	flag.BoolVarP(&isSnippet, "snippet", "s", false, "output snippet format")
+	flag.BoolVarP(&isURL, "url", "u", false, "output document url")
+	flag.BoolVarP(&isList, "list", "l", false, "list resources about given provider")
+	flag.BoolVarP(&isVersion, "version", "v", false, "show version")
+	flag.Usage = func() {
+		fmt.Fprintf(os.Stderr, "Usage: %s [option] RESOURCE or PROVIDER\n", name)
+		fmt.Fprintf(os.Stderr, "\n%s\n\n", description)
+		flag.PrintDefaults()
 	}
-
-	// parse args
-	if err := f.Parse(args[1:]); err != nil {
-		return ExitCodeOK
-	} else if len(args) < 2 {
-		f.Usage()
-		return ExitCodeHelp
-	}
+	flag.Parse()
 
 	// -v option
 	if isVersion {
-		fmt.Fprint(c.outStream, name+" "+version)
-		return ExitCodeOK
+		return []string{name + " " + version}, ExitCodeError
 	}
 
-	if len(f.Args()) < 1 {
-		f.Usage()
-		return ExitCodeHelp
+	if len(flag.Args()) != 1 {
+		flag.Usage()
+		return []string{""}, ExitCodeError
 	}
-	target := f.Args()[0]
+
+	target := flag.Args()[0]
 
 	// --list option
 	var tfResourceType string
@@ -91,22 +74,18 @@ func (c *CLI) Run(args []string) int {
 
 	s, err := scraping.NewScraper(tfResourceType, target)
 	if err != nil {
-		fmt.Fprintf(c.errStream, "%sn", err.Error())
-		return ExitCodeError
+		return []string{err.Error()}, ExitCodeError
 	}
 
 	// --url option
 	if isURL {
-		fmt.Fprint(c.outStream, s.URL)
-		return ExitCodeOK
+		return []string{s.Url}, ExitCodeOK
 	}
 
 	tfobject, err := s.Scrape()
 	if err != nil {
-		fmt.Fprintf(c.errStream, "%sn", err.Error())
-		return ExitCodeError
+		return []string{err.Error()}, ExitCodeError
 	}
 
-	fmt.Fprint(c.outStream, strings.Join(tfobject.Doc(isSnippet, needlessComment, requiredOnly), "\n"))
-	return ExitCodeOK
+	return tfobject.Doc(isSnippet, needlessComment, requiredOnly), ExitCodeOK
 }

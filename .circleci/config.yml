@@ -1,9 +1,9 @@
 version: 2
 
 jobs:
-  checkout:
+  test:
     docker:
-      - image: circleci/golang:1.10
+      - image: circleci/golang:1.9
     working_directory: /go/src/github.com/chroju/tfdoc
     steps:
       - checkout
@@ -11,26 +11,14 @@ jobs:
           keys:
             - vendor
       - run: go get github.com/golang/dep/cmd/dep
+      - run: go get golang.org/x/tools/cmd/cover
+      - run: go get github.com/mattn/goveralls
       - run: dep ensure -v
       - save_cache:
           key: vendor-{{ checksum "Gopkg.lock" }}
           paths:
             - vendor
-      - save_cache:
-          key: source-{{ epoch }}
-          paths:
-            - ~
-  test:
-    docker:
-      - image: circleci/golang:1.10
-    working_directory: /go/src/github.com/chroju/tfdoc
-    steps:
-      - restore_cache:
-          keys:
-            - source
-      - run: go get golang.org/x/tools/cmd/cover
-      - run: go get github.com/mattn/goveralls
-      - run: make test
+      - run: go test -v -covermode=count -coverprofile=coverage.out ./scraping
       - run: goveralls -coverprofile=coverage.out -service=circle-ci -repotoken $COVERALLS_REPO_TOKEN
       - save_cache:
           key: source-{{ epoch }}
@@ -38,7 +26,7 @@ jobs:
             - ~
   deploy:
     docker:
-      - image: circleci/golang:1.10
+      - image: circleci/golang:1.9
     working_directory: /go/src/github.com/chroju/tfdoc
     steps:
       - restore_cache:
@@ -46,7 +34,7 @@ jobs:
             - source
       - run: go get github.com/mitchellh/gox
       - run: go get github.com/tcnksm/ghr
-      - run: make build
+      - run: gox -os="linux darwin windows" -arch="386 amd64" -output "bin/{{.OS}}_{{.Arch}}/{{.Dir}}"
       - run: ${CIRCLE_WORKING_DIRECTORY}/.circleci/compress_binaries.sh
       - run: ghr -t $GITHUB_TOKEN -u $CIRCLE_PROJECT_USERNAME -r $CIRCLE_PROJECT_REPONAME $CIRCLE_TAG pkg/
 
@@ -54,13 +42,11 @@ workflows:
   version: 2
   test_and_deploy:
     jobs:
-      - checkout
       - test:
-          requires:
-            - checkout
+          filters:
+            tags:
+              only: /.*/
       - deploy:
-          requires:
-            - checkout
           filters:
             tags:
               only: /^v.*$/
