@@ -49,7 +49,7 @@ func (s *TfScraper) convertDocUrl() error {
 
 	resp, err := http.Get(url)
 	if err != nil || resp.StatusCode != 200 {
-		return fmt.Errorf("resource \"%s\" is nothing", s.Name)
+		return fmt.Errorf("%s \"%s\" is not found", s.DocType, s.Name)
 	}
 
 	s.Url = url
