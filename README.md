@@ -1,9 +1,9 @@
 tfdoc
 ====
 
-[![Coverage Status](https://coveralls.io/repos/github/chroju/tfdoc/badge.svg?branch=test-ci)](https://coveralls.io/github/chroju/tfdoc?branch=test-ci) [![Go Report Card](https://goreportcard.com/badge/github.com/chroju/tfdoc)](https://goreportcard.com/report/github.com/chroju/tfdoc) [![CircleCI](https://circleci.com/gh/chroju/tfdoc/tree/master.svg?style=svg)](https://circleci.com/gh/chroju/tfdoc/tree/master)
+[![Coverage Status](https://coveralls.io/repos/github/chroju/tfdoc/badge.svg?branch=master)](https://coveralls.io/github/chroju/tfdoc?branch=test-ci) [![Go Report Card](https://goreportcard.com/badge/github.com/chroju/tfdoc)](https://goreportcard.com/report/github.com/chroju/tfdoc) [![CircleCI](https://circleci.com/gh/chroju/tfdoc/tree/master.svg?style=shield)](circleci.com/gh/chroju/tfdoc/tree/master)
 
-tfdoc is a [Terraform](https://github.com/hashicorp/terraform) helper tool.
+tfdoc will help you write [Terraform](https://github.com/hashicorp/terraform) files (.tf) .
 
 
 Description
@@ -30,19 +30,20 @@ Output Terraform documents like this.
 ```
 $ tfdoc aws_instance
 aws_instance
+
 Provides an EC2 instance resource. This allows instances to be created, updated,and deleted. Instances also support provisioning.
+
 
 Argument Reference (= is mandatory):
 
-
 = ami
-  (Required) The AMI to use for the instance.
+    (Required) The AMI to use for the instance.
 
 - availability_zone
-  (Optional) The AZ to start the instance in.
+    (Optional) The AZ to start the instance in.
 
 - placement_group
-  (Optional) The Placement Group to start the instance in.
+    (Optional) The Placement Group to start the instance in.
 
 ...
 ```
@@ -96,14 +97,6 @@ azurerm_app_service_slot
 azurerm_function_app
 azurerm_role_assignment
 ```
-
-
-ToDo
-----
-
-- [ ] Improve visualization of outputs with colors and decoration.
-- [ ] Rewrite snippets to canonical format and style like `terraform fmt` command.
-- [ ] Increse the test coverage.
 
 
 License
