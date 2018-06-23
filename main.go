@@ -25,6 +25,7 @@ const (
 	ExitCodeHelp
 )
 
+// CLI provides command line interface
 type CLI struct {
 	outStream, errStream io.Writer
 }
@@ -35,6 +36,7 @@ func main() {
 	os.Exit(exitCode)
 }
 
+// Run command line process
 func (c *CLI) Run(args []string) int {
 
 	// parse flags
@@ -95,7 +97,7 @@ func (c *CLI) Run(args []string) int {
 
 	// --url option
 	if isURL {
-		fmt.Fprint(c.outStream, s.Url)
+		fmt.Fprint(c.outStream, s.URL)
 		return ExitCodeOK
 	}
 
