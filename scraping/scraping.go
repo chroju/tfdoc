@@ -38,7 +38,7 @@ func (s *TfScraper) convertDocUrl() error {
 		url = "https://www.terraform.io/docs/providers/" + s.Name + "/index.html"
 	case "resource":
 		if !strings.Contains(s.Name, "_") {
-			return fmt.Errorf("resource name is invalid.")
+			return fmt.Errorf("resource \"%s\" is invalid", s.Name)
 		}
 
 		splited := strings.SplitN(s.Name, "_", 2)
@@ -49,7 +49,7 @@ func (s *TfScraper) convertDocUrl() error {
 
 	resp, err := http.Get(url)
 	if err != nil || resp.StatusCode != 200 {
-		return fmt.Errorf("Provider error : %s", err)
+		return fmt.Errorf("resource \"%s\" is nothing", s.Name)
 	}
 
 	s.Url = url

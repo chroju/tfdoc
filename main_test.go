@@ -1,33 +1,61 @@
 package main
 
 import (
+	"bytes"
 	"strings"
 	"testing"
-)
-
-const (
-	commandName = "tfdoc"
 )
 
 func TestCLI(t *testing.T) {
 	var cases = []struct {
 		args             []string
-		expectedResult   string
+		expectedStdout   string
+		expectedStderr   string
 		expectedExitCode int
 	}{
-		{[]string{commandName, "aws_instance"},
-			"Provides an EC2 instance resource.", 0},
-		{[]string{commandName, "aws_instance", "-s"},
-			"resource \"aws_instance\" \"sample\"", 0},
+		{strings.Split("tfdoc", " "),
+			"", "Usage", 2},
+		{strings.Split("tfdoc -h", " "),
+			"", "Usage", 0},
+		{strings.Split("tfdoc --help", " "),
+			"", "Usage", 0},
+		{strings.Split("tfdoc -v", " "),
+			"", "tfdoc", 0},
+		{strings.Split("tfdoc --version", " "),
+			"", "tfdoc", 0},
+		{strings.Split("tfdoc -l aws", " "),
+			"aws_internet_gateway", "", 0},
+		{strings.Split("tfdoc --list aws", " "),
+			"aws_internet_gateway", "", 0},
+		{strings.Split("tfdoc -l", " "),
+			"", "Usage", 2},
+		{strings.Split("tfdoc aws_instance", " "),
+			"Provides an EC2 instance resource.", "", 0},
+		{strings.Split("tfdoc aws_instance -s", " "),
+			"resource \"aws_instance\" \"sample\"", "", 0},
+		{strings.Split("tfdoc aws_instance --snippet", " "),
+			"resource \"aws_instance\" \"sample\"", "", 0},
+		{strings.Split("tfdoc aws_instance -u", " "),
+			"https://www.terraform.io/docs/providers/aws/r/instance.html", "", 0},
+		{strings.Split("tfdoc aws_instance --url", " "),
+			"https://www.terraform.io/docs/providers/aws/r/instance.html", "", 0},
+		// {strings.Split("tfdoc -v", " "),
+		// 	version, 0},
+		// {strings.Split("tfdoc -l", " "),
+		// 	"azurerm_container_group", 0},
 	}
 
-	for _, c := range cases {
-		result, exitCode := run(c.args)
-		joinedResult := strings.Join(result, "\n")
-		if !strings.Contains(joinedResult, c.expectedResult) {
-			t.Errorf("Expected: %s\n Result: %s", c.expectedResult, joinedResult)
+	for i, c := range cases {
+		outBuffer := new(bytes.Buffer)
+		errBuffer := new(bytes.Buffer)
+		cli := &CLI{outStream: outBuffer, errStream: errBuffer}
+		exitCode := cli.Run(c.args)
+		stdout := cli.outStream.(*bytes.Buffer).String()
+		// stderr := cli.errStream.(*bytes.Buffer).String()
+		if !strings.Contains(stdout, c.expectedStdout) {
+			t.Errorf("Case: %d\n Expected: %s\n Result: %s", i, c.expectedStdout, stdout)
 		} else if exitCode != c.expectedExitCode {
-			t.Errorf("Expected: %d\n Result: %d", c.expectedExitCode, exitCode)
+			t.Errorf("Case: %d\n Expected: %d\n Result: %d", i, c.expectedExitCode, exitCode)
 		}
 	}
 }

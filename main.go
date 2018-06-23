@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"strings"
 
@@ -20,16 +21,21 @@ const (
 	ExitCodeOK = iota
 	// ExitCodeError error code
 	ExitCodeError
+	// ExitCodeHelp error code
+	ExitCodeHelp
 )
 
+type CLI struct {
+	outStream, errStream io.Writer
+}
+
 func main() {
-	result, exitCode := run(os.Args)
-	fmt.Println(strings.Join(result, "\n"))
+	cli := &CLI{outStream: os.Stdout, errStream: os.Stderr}
+	exitCode := cli.Run(os.Args)
 	os.Exit(exitCode)
 }
 
-func run(args []string) ([]string, int) {
-	os.Args = args
+func (c *CLI) Run(args []string) int {
 
 	// parse flags
 	var isSnippet bool
@@ -38,8 +44,9 @@ func run(args []string) ([]string, int) {
 	var isVersion bool
 	var needlessComment bool
 	var requiredOnly bool
-	// snippetCommand := flag.NewFlagSet("snippet", flag.ExitOnError)
-	f := flag.NewFlagSet(os.Args[0], flag.ExitOnError)
+
+	f := flag.NewFlagSet(args[0], flag.ContinueOnError)
+	f.SetOutput(c.errStream)
 	f.BoolVar(&needlessComment, "no-comments", false, "use with -s to output without comments")
 	f.BoolVar(&requiredOnly, "only-required", false, "use with -s to output only required arguments")
 	f.BoolVarP(&isSnippet, "snippet", "s", false, "output snippet format")
@@ -47,22 +54,29 @@ func run(args []string) ([]string, int) {
 	f.BoolVarP(&isList, "list", "l", false, "list resources about given provider")
 	f.BoolVarP(&isVersion, "version", "v", false, "show version")
 	f.Usage = func() {
-		fmt.Fprintf(os.Stderr, "Usage: %s [option] RESOURCE or PROVIDER\n", name)
-		fmt.Fprintf(os.Stderr, "\n%s\n\n", description)
-		flag.PrintDefaults()
+		fmt.Fprintf(c.errStream, "Usage: %s [option] RESOURCE or PROVIDER\n", name)
+		fmt.Fprintf(c.errStream, "\n%s\n\n", description)
+		f.PrintDefaults()
 	}
-	f.Parse(os.Args[1:])
+
+	// parse args
+	if err := f.Parse(args[1:]); err != nil {
+		return ExitCodeOK
+	} else if len(args) < 2 {
+		f.Usage()
+		return ExitCodeHelp
+	}
 
 	// -v option
 	if isVersion {
-		return []string{name + " " + version}, ExitCodeError
+		fmt.Fprint(c.outStream, name+" "+version)
+		return ExitCodeOK
 	}
 
-	if len(f.Args()) != 1 {
+	if len(f.Args()) < 1 {
 		f.Usage()
-		return []string{""}, ExitCodeError
+		return ExitCodeHelp
 	}
-
 	target := f.Args()[0]
 
 	// --list option
@@ -75,18 +89,22 @@ func run(args []string) ([]string, int) {
 
 	s, err := scraping.NewScraper(tfResourceType, target)
 	if err != nil {
-		return []string{err.Error()}, ExitCodeError
+		fmt.Fprintf(c.errStream, "%sn", err.Error())
+		return ExitCodeError
 	}
 
 	// --url option
 	if isURL {
-		return []string{s.Url}, ExitCodeOK
+		fmt.Fprint(c.outStream, s.Url)
+		return ExitCodeOK
 	}
 
 	tfobject, err := s.Scrape()
 	if err != nil {
-		return []string{err.Error()}, ExitCodeError
+		fmt.Fprintf(c.errStream, "%sn", err.Error())
+		return ExitCodeError
 	}
 
-	return tfobject.Doc(isSnippet, needlessComment, requiredOnly), ExitCodeOK
+	fmt.Fprint(c.outStream, strings.Join(tfobject.Doc(isSnippet, needlessComment, requiredOnly), "\n"))
+	return ExitCodeOK
 }
