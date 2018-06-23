@@ -18,7 +18,7 @@ func TestTfResourceConvertURL(t *testing.T) {
 
 	for _, c := range cases {
 		scraper, _ := NewScraper("resource", c.resourceName)
-		if !strings.Contains(scraper.Url, c.expectedURL) {
+		if !strings.Contains(scraper.URL, c.expectedURL) {
 			t.Error()
 		}
 	}
@@ -37,7 +37,7 @@ func TestConvertURLError(t *testing.T) {
 	for _, c := range cases {
 		scraper, err := NewScraper(c.docType, c.resourceName)
 		if err == nil {
-			t.Errorf("url: %s, docType: %s, resourceName: %s", scraper.Url, c.docType, c.resourceName)
+			t.Errorf("url: %s, docType: %s, resourceName: %s", scraper.URL, c.docType, c.resourceName)
 		}
 	}
 }
@@ -55,8 +55,8 @@ func TestTfProviderConvertURL(t *testing.T) {
 
 	for _, c := range cases {
 		scraper, _ := NewScraper("provider", c.providerName)
-		if !strings.Contains(scraper.Url, c.expectedURL) {
-			t.Errorf("expect: %s \n result: %s", c.expectedURL, scraper.Url)
+		if !strings.Contains(scraper.URL, c.expectedURL) {
+			t.Errorf("expect: %s \n result: %s", c.expectedURL, scraper.URL)
 		}
 	}
 }

@@ -14,12 +14,14 @@ type tfResourceArg struct {
 	Required    bool
 }
 
+// TfResource is terraform resrouce object such as aws_instance, grafana_dashboard
 type TfResource struct {
 	Name        string
 	Description string
 	Args        []*tfResourceArg
 }
 
+// Doc return terraform document
 func (t *TfResource) Doc(opts ...bool) []string {
 	bold := color.New(color.Bold, color.Underline).SprintFunc()
 	isSnippet := opts[0]
@@ -65,6 +67,7 @@ func printTfResourceArgsDoc(args []*tfResourceArg, indent int) []string {
 	return ret
 }
 
+// Snippet return terraform resrouce snippet
 func (t *TfResource) Snippet(needlessComment bool, requiredOnly bool) []string {
 	var ret []string
 	ret = append(ret, "resource \""+t.Name+"\" \"sample\" {")

@@ -8,20 +8,23 @@ import (
 	"github.com/PuerkitoBio/goquery"
 )
 
+// TfScraper scrape terraform document
 type TfScraper struct {
 	Name    string
 	DocType string
-	Url     string
+	URL     string
 }
 
+// TfObject is terraform provider or resource interface
 type TfObject interface {
 	Doc(...bool) (doc []string)
 }
 
+// NewScraper return new TfScraper from resource or provider name and that type
 func NewScraper(docType string, name string) (*TfScraper, error) {
 	s := TfScraper{Name: name, DocType: docType}
 
-	err := s.convertDocUrl()
+	err := s.convertDocURL()
 	if err != nil {
 		return nil, err
 	}
@@ -30,7 +33,7 @@ func NewScraper(docType string, name string) (*TfScraper, error) {
 }
 
 // convert resource or provider name to document url.
-func (s *TfScraper) convertDocUrl() error {
+func (s *TfScraper) convertDocURL() error {
 	var url string
 
 	switch s.DocType {
@@ -52,19 +55,19 @@ func (s *TfScraper) convertDocUrl() error {
 		return fmt.Errorf("%s \"%s\" is not found", s.DocType, s.Name)
 	}
 
-	s.Url = url
+	s.URL = url
 	return nil
 }
 
-// scrape from web
+// Scrape terraform document from web
 func (s *TfScraper) Scrape() (TfObject, error) {
-	res, err := http.Get(s.Url)
-	defer res.Body.Close()
+	res, err := http.Get(s.URL)
 
 	if err != nil {
 		err = fmt.Errorf("URL Query error : %s", err)
 		return nil, err
 	}
+	defer res.Body.Close()
 
 	if res.StatusCode != 200 {
 		err = fmt.Errorf("Status code error : %d %s", res.StatusCode, res.Status)
